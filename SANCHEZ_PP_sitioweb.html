@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Mis Mates: Aprender matematicas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper:        #F5F6FA;
+    --grid-line:    #DCE2F0;
+    --ink:          #1C2541;
+    --ink-soft:     #5B6480;
+    --accent:       #6247AA;
+    --accent-soft:  #EDE8F9;
+    --correct:      #2EC4B6;
+    --correct-soft: #DDF6F3;
+    --wrong:        #EF4855;
+    --wrong-soft:   #FDE4E6;
+    --highlight:    #FFB627;
+    --card-bg:      #FFFFFF;
+    --margin-line:  #F3B7BC;
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body:    'Figtree', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .notebook {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(28, 37, 65, 0.12);
+    padding: 56px 40px 40px 56px;
+    overflow: hidden;
+  }
+
+  .notebook::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 36px;
+    width: 2px;
+    background: var(--margin-line);
+  }
+
+  .notebook::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 35px,
+      var(--grid-line) 36px
+    );
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .spiral {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    z-index: 2;
+  }
+  .spiral span {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 3px solid var(--ink-soft);
+    opacity: 0.35;
+  }
+
+  .notebook > * { position: relative; z-index: 1; }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  .score {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink-soft);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 12px;
+  }
+  .back-btn:hover { color: var(--accent); }
+
+  .progress {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .progress .dot {
+    flex: 1;
+    min-width: 12px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--grid-line);
+    transition: background 0.3s ease;
+  }
+  .progress .dot.done { background: var(--accent); }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  h1.title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    margin: 0 0 8px;
+  }
+  p.subtitle {
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+
+  .topic-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+
+  .question-text {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0 0 24px;
+  }
+
+  .card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .topic-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    background: var(--paper);
+    border: 2px solid var(--grid-line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.15s ease;
+  }
+  .topic-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .topic-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+  }
+
+  .topic-info { flex: 1; }
+  .topic-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    margin: 0 0 2px;
+  }
+  .topic-meta {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .topic-arrow {
+    flex-shrink: 0;
+    color: var(--ink-soft);
+    font-size: 18px;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 2px solid var(--grid-line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { cursor: default; }
+
+  .btn.correct {
+    background: var(--correct-soft);
+    border-color: var(--correct);
+    color: #0E7A6F;
+  }
+  .btn.wrong {
+    background: var(--wrong-soft);
+    border-color: var(--wrong);
+    color: #B5222C;
+  }
+
+  .primary-btn {
+    width: 100%;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.12s ease;
+    margin-bottom: 10px;
+  }
+  .primary-btn:hover { opacity: 0.92; }
+  .primary-btn:active { transform: scale(0.98); }
+
+  .secondary-btn {
+    width: 100%;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .secondary-btn:hover { opacity: 0.85; }
+
+  .ghost-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink-soft);
+    background: none;
+    border: 2px dashed var(--grid-line);
+    border-radius: 12px;
+    padding: 11px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  .feedback.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  .feedback.correct-fb { background: var(--correct-soft); }
+  .feedback.wrong-fb   { background: var(--wrong-soft); }
+  .feedback.reveal-fb  { background: var(--accent-soft); }
+
+  .stamp {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    margin-top: 2px;
+  }
+  .correct-fb .stamp { background: var(--correct); }
+  .wrong-fb .stamp   { background: var(--wrong); }
+  .reveal-fb .stamp  { background: var(--accent); }
+
+  .feedback-text { font-size: 14px; line-height: 1.5; flex: 1; }
+  .feedback-text strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .correct-fb .feedback-text strong { color: #0E7A6F; }
+  .wrong-fb .feedback-text strong { color: #B5222C; }
+  .reveal-fb .feedback-text strong { color: var(--accent); }
+
+  .feedback-steps {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--ink-soft);
+  }
+  .feedback-steps li { margin-bottom: 3px; }
+
+  .next-row { margin-top: 20px; }
+
+  .quiz-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+  .finish-btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .finish-btn:hover { color: var(--wrong); }
+  .finish-btn-armed {
+    color: var(--wrong);
+    font-weight: 700;
+  }
+
+  .result-score {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 8px 0 4px;
+  }
+  .result-note { color: var(--ink-soft); margin-bottom: 28px; }
+
+  /* ============================================
+     VISUALES DE LAS LECCIONES
+     ============================================ */
+  .lesson-visual {
+    background: var(--paper);
+    border: 2px solid var(--grid-line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .visual-caption {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin: 0;
+  }
+
+  .visual-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .group {
+    display: flex;
+    gap: 3px;
+    padding: 6px;
+    background: var(--accent-soft);
+    border-radius: 8px;
+  }
+  .mini-box {
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .plus-sign {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+
+  .frac-bar {
+    display: flex;
+    width: 100%;
+    max-width: 280px;
+    height: 30px;
+    border: 2px solid var(--grid-line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .frac-seg { flex: 1; border-right: 1px solid #fff; }
+  .frac-seg:last-child { border-right: none; }
+
+  .percent-bar-track {
+    width: 100%;
+    max-width: 280px;
+    height: 26px;
+    background: var(--grid-line);
+    border-radius: 13px;
+    overflow: hidden;
+  }
+  .percent-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 13px 0 0 13px;
+  }
+
+  .grid-visual { display: inline-flex; flex-direction: column; gap: 2px; }
+  .grid-row { display: flex; gap: 2px; }
+  .grid-cell {
+    width: 14px;
+    height: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+  }
+
+  .angle-visual {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 2px solid var(--grid-line);
+  }
+
+  .decimal-visual {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .decimal-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+  .decimal-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+  }
+  .decimal-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .decimal-dot {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--ink-soft);
+  }
+
+  .balance-visual {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .balance-side {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 15px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+  .balance-equals {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-soft);
+  }
+
+  .stat-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 80px;
+    padding-top: 20px;
+  }
+  .stat-bar {
+    width: 22px;
+    background: var(--accent);
+    border-radius: 4px 4px 0 0;
+    position: relative;
+  }
+  .stat-bar span {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+
+  .video-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .video-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .lesson-video {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: block;
+    background: #000;
+  }
+
+  @media (max-width: 480px) {
+    .notebook { padding: 48px 20px 28px 40px; }
+    .notebook::before { left: 22px; }
+    .question-text { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="notebook">
+  <div class="spiral" id="spiral"></div>
+
+  <!-- ============ PANTALLA DE INICIO ============ -->
+  <section class="screen active" id="screen-start">
+    <h1 class="title" id="start-title"></h1>
+    <p class="subtitle" id="start-subtitle"></p>
+    <button class="primary-btn" id="start-button" onclick="showHub()"></button>
+  </section>
+
+  <!-- ============ PANTALLA DEL HUB (TEMAS) ============ -->
+  <section class="screen" id="screen-hub">
+    <h1 class="title">Elige un tema</h1>
+    <p class="subtitle">Cada tema tiene varios subtemas para practicar.</p>
+    <div class="card-grid" id="topics-container"></div>
+  </section>
+
+  <!-- ============ PANTALLA DE SUBTEMAS ============ -->
+  <section class="screen" id="screen-subtopics">
+    <button class="back-btn" onclick="showHub()">&larr; Volver a temas</button>
+    <h1 class="title" id="subtopics-title"></h1>
+    <p class="subtitle">Elige un subtema para empezar.</p>
+    <div class="card-grid" id="subtopics-container"></div>
+  </section>
+
+  <!-- ============ PANTALLA DE LECCIÓN (INTRO) ============ -->
+  <section class="screen" id="screen-lesson">
+    <button class="back-btn" id="lesson-back-btn">&larr; Volver a subtemas</button>
+    <h1 class="title" id="lesson-title"></h1>
+    <p class="subtitle" id="lesson-text"></p>
+    <div class="lesson-visual" id="lesson-visual"></div>
+    <div id="lesson-video"></div>
+    <button class="primary-btn" id="lesson-start-btn">Comenzar quiz</button>
+  </section>
+
+  <!-- ============ PANTALLA DEL QUIZ ============ -->
+  <section class="screen" id="screen-quiz">
+    <div class="topbar">
+      <p class="brand" id="quiz-brand"></p>
+      <p class="score" id="score-display">Puntaje: 0 / 0</p>
+    </div>
+    <div class="progress" id="progress-bar"></div>
+    <div class="quiz-toolbar">
+      <button class="finish-btn" id="finish-quiz-btn" onclick="confirmFinishQuiz()">Terminar quiz</button>
+    </div>
+
+    <p class="topic-label" id="topic-label"></p>
+    <h2 class="question-text" id="question-text"></h2>
+    <div id="answers-container"></div>
+    <button class="ghost-btn" id="reveal-btn" onclick="revealAnswer()">Mostrar respuesta (no suma puntos)</button>
+
+    <div class="feedback" id="feedback-box">
+      <div class="stamp" id="feedback-stamp"></div>
+      <div class="feedback-text">
+        <strong id="feedback-title"></strong>
+        <ol class="feedback-steps" id="feedback-steps"></ol>
+      </div>
+    </div>
+
+    <div class="next-row">
+      <button class="primary-btn" id="next-btn" style="display:none;" onclick="nextQuestion()">Siguiente pregunta</button>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA DE RESULTADOS ============ -->
+  <section class="screen" id="screen-results">
+    <h1 class="title">¡Buen trabajo!</h1>
+    <p class="result-score" id="result-score">0 / 0</p>
+    <p class="result-note" id="result-note"></p>
+    <button class="primary-btn" onclick="retrySubtopic()">Intentar de nuevo</button>
+    <button class="secondary-btn" onclick="showHub()">Volver al inicio</button>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN DEL SITIO
+   ============================================================ */
+const SITE = {
+  title: "Mis Mates",
+  browserTitle: "Mis Mates: Aprender las matematicas",
+  startTitle: "Mis Mates",
+  startSubtitle: "Elige un tema, responde las preguntas y recibe retroalimentación al instante.",
+  startButtonText: "Comenzar",
+  questionsPerQuiz: 10
+};
+
+function applySiteConfig() {
+  document.getElementById('page-title').textContent = SITE.browserTitle;
+  document.getElementById('start-title').textContent = SITE.startTitle;
+  document.getElementById('start-subtitle').textContent = SITE.startSubtitle;
+  document.getElementById('start-button').textContent = SITE.startButtonText;
+  document.getElementById('quiz-brand').textContent = SITE.title;
+}
+
+/* ============================================================
+   FUNCIONES AUXILIARES
+   ============================================================ */
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/* Construye una pregunta de opción múltiple ya barajada.
+   steps es un arreglo de strings que explica, paso a paso,
+   cómo se resuelve — se muestra en la retroalimentación sin
+   importar si la respuesta fue correcta o no. */
+function makeMCQuestion(questionText, correctAnswer, wrongAnswers, steps) {
+  let options = [String(correctAnswer), ...wrongAnswers.map(String)];
+  options = [...new Set(options)];
+  let filler = 1;
+  while (options.length < 4) {
+    options.push(`${correctAnswer}+${filler}`);
+    filler++;
+  }
+  options = options.slice(0, 4);
+  const shuffled = shuffleArray(options);
+  const correctIndex = shuffled.indexOf(String(correctAnswer));
+  return { question: questionText, options: shuffled, correctIndex, steps };
+}
+
+/* Genera 3 respuestas incorrectas "cercanas" a la respuesta
+   correcta, evitando repetir la correcta o números fuera de
+   rango. Reemplaza el bucle "const wrongs = new Set(); while
+   (...) {...}" que antes se repetía en cada generador.
+     ans:      la respuesta correcta (número o string numérico)
+     count:    cuántas respuestas incorrectas generar (3 por defecto)
+     minDelta: la distancia mínima respecto a la respuesta correcta
+     spread:   la distancia máxima respecto a la respuesta correcta
+     decimals: cuántos decimales debe tener cada opción (0 = enteros)
+     min:      el valor más bajo permitido (evita negativos donde no aplica) */
+function generateWrongs(ans, { count = 3, minDelta = 1, spread = 9, decimals = 0, min = 0 } = {}) {
+  const ansNum = parseFloat(ans);
+  const wrongs = new Set();
+  while (wrongs.size < count) {
+    const delta = (randInt(minDelta, spread) / Math.pow(10, decimals)) * (Math.random() < 0.5 ? -1 : 1);
+    const candidate = ansNum + delta;
+    const w = decimals > 0 ? candidate.toFixed(decimals) : String(Math.round(candidate));
+    if (parseFloat(w) !== ansNum && parseFloat(w) >= min) wrongs.add(w);
+  }
+  return [...wrongs];
+}
+
+/* ============================================================
+   CONSTRUCTORES DE VISUALES PARA LAS LECCIONES
+   Cada uno devuelve un fragmento de HTML. Se usan con números
+   fijos (no aleatorios) para que la lección sea siempre el
+   mismo ejemplo claro.
+   ============================================================ */
+function visualRepeatedAddition(unit, times) {
+  const groups = [];
+  for (let i = 0; i < times; i++) {
+    let boxes = '';
+    for (let j = 0; j < unit; j++) boxes += `<span class="mini-box"></span>`;
+    groups.push(`<div class="group">${boxes}</div>`);
+  }
+  return `
+    <div class="visual-row">${groups.join('<span class="plus-sign">+</span>')}</div>
+    <p class="visual-caption">${unit} × ${times} = ${Array(times).fill(unit).join(' + ')} = ${unit * times}</p>
+  `;
+}
+
+function visualNumberLine(min, max, start, end) {
+  const width = 480, padding = 20;
+  const scale = (width - 2 * padding) / (max - min);
+  const x = v => padding + (v - min) * scale;
+  let ticks = '';
+  const step = (max - min > 14) ? 2 : 1;
+  for (let v = min; v <= max; v++) {
+    ticks += `<line x1="${x(v)}" y1="14" x2="${x(v)}" y2="22" stroke="var(--ink-soft)" stroke-width="1"/>`;
+    if (v % step === 0) {
+      ticks += `<text x="${x(v)}" y="36" font-size="10" text-anchor="middle" fill="var(--ink-soft)">${v}</text>`;
+    }
+  }
+  return `
+  <svg viewBox="0 0 ${width} 50" style="width:100%;height:60px;">
+    <line x1="${padding}" y1="18" x2="${width - padding}" y2="18" stroke="var(--ink-soft)" stroke-width="1.5"/>
+    ${ticks}
+    <line x1="${x(start)}" y1="18" x2="${x(end)}" y2="18" stroke="var(--accent)" stroke-width="3"/>
+    <circle cx="${x(start)}" cy="18" r="5" fill="var(--accent)"/>
+    <circle cx="${x(end)}" cy="18" r="5" fill="var(--correct)"/>
+  </svg>
+  <p class="visual-caption">Empieza en ${start} y termina en ${end}</p>`;
+}
+
+function visualFractionBar(numerator, denominator) {
+  let segs = '';
+  for (let i = 0; i < denominator; i++) {
+    segs += `<span class="frac-seg" style="background:${i < numerator ? 'var(--accent)' : 'var(--grid-line)'}"></span>`;
+  }
+  return `<div class="frac-bar">${segs}</div><p class="visual-caption">${numerator}/${denominator}</p>`;
+}
+
+function visualPercentBar(percent) {
+  return `
+   <div class="percent-bar-track"><div class="percent-bar-fill" style="width:${percent}%"></div></div>
+   <p class="visual-caption">${percent} de cada 100 casillas</p>`;
+}
+
+function visualGrid(w, h) {
+  let rows = '';
+  for (let r = 0; r < h; r++) {
+    let cols = '';
+    for (let c = 0; c < w; c++) cols += `<span class="grid-cell"></span>`;
+    rows += `<div class="grid-row">${cols}</div>`;
+  }
+  return `<div class="grid-visual">${rows}</div><p class="visual-caption">${w} × ${h} = ${w * h} cuadritos</p>`;
+}
+
+function visualAngle(x, total) {
+  return `
+  <div class="angle-visual" style="background: conic-gradient(var(--accent) 0deg ${x}deg, var(--accent-soft) ${x}deg ${total}deg, transparent ${total}deg 360deg);"></div>
+  <p class="visual-caption">${x}° de un total de ${total}°</p>`;
+}
+
+function visualDecimal(numStr) {
+  const [intPart, decPart] = numStr.split('.');
+  return `
+  <div class="decimal-visual">
+    <div class="decimal-block"><span class="decimal-value">${intPart}</span><span class="decimal-label">enteros</span></div>
+    <div class="decimal-dot">.</div>
+    <div class="decimal-block"><span class="decimal-value">${decPart}</span><span class="decimal-label">décimos</span></div>
+  </div>
+  <p class="visual-caption">${numStr} = ${intPart} enteros y ${decPart} décimos</p>`;
+}
+
+function visualBalance(leftText, rightText) {
+  return `
+  <div class="balance-visual">
+    <div class="balance-side">${leftText}</div>
+    <div class="balance-equals">=</div>
+    <div class="balance-side">${rightText}</div>
+  </div>
+  <p class="visual-caption">Lo que haces de un lado, hazlo también del otro</p>`;
+}
+
+function visualBarChart(nums) {
+  const max = Math.max(...nums);
+  const bars = nums.map(n => `<div class="stat-bar" style="height:${Math.round((n / max) * 60) + 10}px"><span>${n}</span></div>`).join('');
+  return `<div class="stat-chart">${bars}</div><p class="visual-caption">Datos: ${nums.join(', ')}</p>`;
+}
+
+/* Construye el reproductor de video de una lección, si tiene uno.
+   video puede ser:
+     { type: "youtube", id: "ID_DEL_VIDEO" }   — video de YouTube
+     { type: "local", src: "videos/x.mp4" }    — archivo de video propio
+   Si el subtema no tiene video, simplemente no se muestra nada. */
+function renderVideo(video) {
+  if (!video) return '';
+  if (video.type === 'youtube') {
+    return `
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/${video.id}" title="Video de la lección"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+    </div>`;
+  }
+  if (video.type === 'local') {
+    return `
+    <video class="lesson-video" controls preload="metadata" src="${video.src}">
+      Tu navegador no puede reproducir este video.
+    </video>`;
+  }
+  return '';
+}
+
+/* ============================================================
+   GENERADORES DE PREGUNTAS POR SUBTEMA
+   Cada uno construye sus propios "wrongs" (respuestas
+   incorrectas) y "steps" (proceso paso a paso) y llama a
+   makeMCQuestion al final.
+   ============================================================ */
+
+// --- Suma y resta ---
+function genSumaEnteros() {
+  const a = randInt(10, 99);
+  const isAdd = Math.random() < 0.5;
+  let b, ans, opText, steps;
+  if (isAdd) {
+    b = randInt(10, 99); ans = a + b; opText = `${a} + ${b}`;
+    const bTens = Math.floor(b / 10) * 10, bOnes = b % 10;
+    steps = [
+      `Empieza con ${a}.`,
+      `Suma las decenas de ${b}: ${a} + ${bTens} = ${a + bTens}.`,
+      `Suma las unidades de ${b}: ${a + bTens} + ${bOnes} = ${ans}.`,
+      `Entonces, ${opText} = ${ans}.`
+    ];
+  } else {
+    b = randInt(10, a); ans = a - b; opText = `${a} − ${b}`;
+    const bTens = Math.floor(b / 10) * 10, bOnes = b % 10;
+    steps = [
+      `Empieza con ${a}.`,
+      `Resta las decenas de ${b}: ${a} − ${bTens} = ${a - bTens}.`,
+      `Resta las unidades de ${b}: ${a - bTens} − ${bOnes} = ${ans}.`,
+      `Entonces, ${opText} = ${ans}.`
+    ];
+  }
+  const wrongs = generateWrongs(ans, { spread: 9 });
+  return makeMCQuestion(`¿Cuánto es ${opText}?`, ans, wrongs, steps);
+}
+
+function genSumaDecimales() {
+  const a = (randInt(10, 99) / 10).toFixed(1);
+  const b = (randInt(10, 99) / 10).toFixed(1);
+  const isAdd = Math.random() < 0.5;
+  let ans, opText, steps;
+  if (isAdd) {
+    ans = (parseFloat(a) + parseFloat(b)).toFixed(1);
+    opText = `${a} + ${b}`;
+    steps = [
+      `Alinea el punto decimal de ${a} y ${b}.`,
+      `Suma como si fueran números enteros: ${Math.round(parseFloat(a) * 10)} + ${Math.round(parseFloat(b) * 10)} = ${Math.round(parseFloat(ans) * 10)}.`,
+      `Vuelve a colocar el punto decimal: ${opText} = ${ans}.`
+    ];
+  } else {
+    const [x, y] = parseFloat(a) >= parseFloat(b) ? [a, b] : [b, a];
+    ans = (parseFloat(x) - parseFloat(y)).toFixed(1);
+    opText = `${x} − ${y}`;
+    steps = [
+      `Alinea el punto decimal de ${x} y ${y}.`,
+      `Resta como si fueran números enteros: ${Math.round(parseFloat(x) * 10)} − ${Math.round(parseFloat(y) * 10)} = ${Math.round(parseFloat(ans) * 10)}.`,
+      `Vuelve a colocar el punto decimal: ${opText} = ${ans}.`
+    ];
+  }
+  const wrongs = generateWrongs(ans, { spread: 9, decimals: 1 });
+  return makeMCQuestion(`¿Cuánto es ${opText}?`, ans, wrongs, steps);
+}
+
+function genPositivosNegativos() {
+  const a = randInt(-10, 10);
+  const b = randInt(-10, 10);
+  const isAdd = Math.random() < 0.5;
+  const ans = isAdd ? a + b : a - b;
+  const opText = isAdd ? `${a} + (${b})` : `${a} − (${b})`;
+  const direction = isAdd
+    ? (b >= 0 ? 'derecha' : 'izquierda')
+    : (b >= 0 ? 'izquierda' : 'derecha');
+  const steps = [
+    `Ubica ${a} en la recta numérica.`,
+    `${isAdd ? 'Sumar' : 'Restar'} ${b} significa moverte ${Math.abs(b)} espacios hacia la ${direction}.`,
+    `Llegas a ${ans}.`
+  ];
+  const wrongs = generateWrongs(ans, { spread: 6, min: -Infinity });
+  return makeMCQuestion(`¿Cuánto es ${opText}?`, ans, wrongs, steps);
+}
+
+// --- Multiplicación y división ---
+function genTablas() {
+  if (Math.random() < 0.5) {
+    const a = randInt(2, 12), b = randInt(2, 12), ans = a * b;
+    const steps = [
+      `${a} × ${b} significa sumar ${a} un total de ${b} veces.`,
+      `${Array(b).fill(a).join(' + ')} = ${ans}.`,
+      `Entonces, ${a} × ${b} = ${ans}.`
+    ];
+    const wrongs = generateWrongs(ans, { spread: 10, min: 1 });
+    return makeMCQuestion(`¿Cuánto es ${a} × ${b}?`, ans, wrongs, steps);
+  } else {
+    const b = randInt(2, 12), ans = randInt(2, 12), a = b * ans;
+    const steps = [
+      `${a} ÷ ${b} pregunta: ¿${b} multiplicado por qué número da ${a}?`,
+      `Prueba: ${b} × ${ans} = ${a}.`,
+      `Entonces, ${a} ÷ ${b} = ${ans}.`
+    ];
+    const wrongs = generateWrongs(ans, { spread: 5, min: 1 });
+    return makeMCQuestion(`¿Cuánto es ${a} ÷ ${b}?`, ans, wrongs, steps);
+  }
+}
+
+function genDecimalesMD() {
+  if (Math.random() < 0.5) {
+    const a = (randInt(10, 99) / 10).toFixed(1), b = randInt(2, 9);
+    const ans = (parseFloat(a) * b).toFixed(1);
+    const steps = [
+      `Multiplica como si ${a} fuera un número entero: ${Math.round(parseFloat(a) * 10)} × ${b} = ${Math.round(parseFloat(a) * 10) * b}.`,
+      `Como ${a} tiene un decimal, mueve el punto una posición desde la derecha.`,
+      `${a} × ${b} = ${ans}.`
+    ];
+    const wrongs = generateWrongs(ans, { spread: 9, decimals: 1, min: 0.1 });
+    return makeMCQuestion(`¿Cuánto es ${a} × ${b}?`, ans, wrongs, steps);
+  } else {
+    const b = randInt(2, 9), ans = (randInt(10, 99) / 10).toFixed(1);
+    const a = (parseFloat(ans) * b).toFixed(1);
+    const steps = [
+      `${a} ÷ ${b} es repartir ${a} en ${b} partes iguales.`,
+      `Divide como si fuera un número entero y luego coloca el punto decimal.`,
+      `${a} ÷ ${b} = ${ans}.`
+    ];
+    const wrongs = generateWrongs(ans, { spread: 9, decimals: 1, min: 0.1 });
+    return makeMCQuestion(`¿Cuánto es ${a} ÷ ${b}?`, ans, wrongs, steps);
+  }
+}
+
+// --- Fracciones ---
+function genFraccionSuma() {
+  const denomPool = [2, 3, 4, 6, 8, 12];
+  const d = denomPool[randInt(0, denomPool.length - 1)];
+  const n1 = randInt(1, d - 1), n2 = randInt(1, d - 1);
+  const sumNum = n1 + n2;
+  const g = gcd(sumNum, d);
+  const ans = `${sumNum / g}/${d / g}`;
+  const steps = [
+    `Los denominadores ya son iguales (${d}), así que solo suma los numeradores.`,
+    `${n1} + ${n2} = ${sumNum}, entonces el resultado es ${sumNum}/${d}.`,
+    g > 1 ? `Simplifica dividiendo entre ${g}: ${ans}.` : `Ya está en su forma más simple: ${ans}.`
+  ];
+  const wrongs = new Set();
+  while (wrongs.size < 3) {
+    let wn = sumNum + randInt(-2, 2);
+    if (wn <= 0) wn = sumNum + 1;
+    const w = `${wn}/${d}`;
+    if (w !== ans) wrongs.add(w);
+  }
+  return makeMCQuestion(`¿Cuánto es ${n1}/${d} + ${n2}/${d}?`, ans, [...wrongs], steps);
+}
+
+function genFraccionEquivalente() {
+  const denomPool = [2, 3, 4, 5, 6];
+  const d = denomPool[randInt(0, denomPool.length - 1)];
+  const n = randInt(1, d - 1);
+  const factor = randInt(2, 4);
+  const ans = `${n * factor}/${d * factor}`;
+  const steps = [
+    `Multiplica el numerador y el denominador por el mismo número.`,
+    `${n}/${d} × ${factor}/${factor} = ${n * factor}/${d * factor}.`,
+    `Entonces, ${ans} es equivalente a ${n}/${d}.`
+  ];
+  const wrongs = new Set();
+  while (wrongs.size < 3) {
+    const wf = randInt(2, 5);
+    let wn = n * wf + randInt(-1, 1);
+    if (wn <= 0) wn = 1;
+    const w = `${wn}/${d * wf}`;
+    if (w !== ans) wrongs.add(w);
+  }
+  return makeMCQuestion(`¿Cuál fracción es equivalente a ${n}/${d}?`, ans, [...wrongs], steps);
+}
+
+// --- Geometría ---
+function genAngulos() {
+  const isComplement = Math.random() < 0.5;
+  const x = isComplement ? randInt(10, 80) : randInt(10, 170);
+  const ans = isComplement ? 90 - x : 180 - x;
+  const label = isComplement ? 'complementario' : 'suplementario';
+  const steps = [
+    isComplement ? `Los ángulos complementarios suman 90°.` : `Los ángulos suplementarios suman 180°.`,
+    `${isComplement ? 90 : 180} − ${x} = ${ans}.`,
+    `Entonces, el ángulo ${label} mide ${ans}°.`
+  ];
+  const wrongs = generateWrongs(ans, { minDelta: 5, spread: 20, min: 1 });
+  return makeMCQuestion(`Si un ángulo mide ${x}°, ¿cuánto mide su ángulo ${label}?`, ans, wrongs, steps);
+}
+
+function genPerimetroArea() {
+  const w = randInt(3, 15), h = randInt(3, 15);
+  const askArea = Math.random() < 0.5;
+  const ans = askArea ? w * h : 2 * (w + h);
+  const label = askArea ? 'área' : 'perímetro';
+  const unit = askArea ? 'cm²' : 'cm';
+  const steps = askArea
+    ? [`El área de un rectángulo es largo × ancho.`, `${w} × ${h} = ${ans}.`, `Área = ${ans} ${unit}.`]
+    : [`El perímetro es la suma de los 4 lados: 2 × (largo + ancho).`, `2 × (${w} + ${h}) = ${ans}.`, `Perímetro = ${ans} ${unit}.`];
+  const wrongs = generateWrongs(ans, { spread: 10, min: 1 }).map(v => `${v} ${unit}`);
+  return makeMCQuestion(
+    `Un rectángulo mide ${w} cm de largo y ${h} cm de ancho. ¿Cuál es su ${label}?`,
+    `${ans} ${unit}`, wrongs, steps
+  );
+}
+
+// --- Porcentajes ---
+function genPorcentajes() {
+  const percentPool = [10, 20, 25, 50, 75];
+  const p = percentPool[randInt(0, percentPool.length - 1)];
+  const basePool = [20, 40, 60, 80, 100, 120, 160, 200];
+  const base = basePool[randInt(0, basePool.length - 1)];
+  const ans = (base * p) / 100;
+  const steps = [
+    `${p}% significa ${p} de cada 100, o sea ${p}/100.`,
+    `${p}/100 × ${base} = ${ans}.`,
+    `El ${p}% de ${base} es ${ans}.`
+  ];
+  const wrongs = generateWrongs(ans, { spread: 10, min: 1 });
+  return makeMCQuestion(`¿Cuánto es el ${p}% de ${base}?`, ans, wrongs, steps);
+}
+
+// --- Potencias y raíces ---
+function genPotencias() {
+  if (Math.random() < 0.5) {
+    const root = randInt(2, 12), square = root * root;
+    const steps = [
+      `Buscas un número que multiplicado por sí mismo dé ${square}.`,
+      `${root} × ${root} = ${square}.`,
+      `√${square} = ${root}.`
+    ];
+    const wrongs = generateWrongs(root, { spread: 4, min: 1 });
+    return makeMCQuestion(`¿Cuál es la raíz cuadrada de ${square}?`, root, wrongs, steps);
+  } else {
+    const base = randInt(2, 12), ans = base * base;
+    const steps = [
+      `${base}² significa ${base} multiplicado por sí mismo.`,
+      `${base} × ${base} = ${ans}.`,
+      `${base}² = ${ans}.`
+    ];
+    const wrongs = generateWrongs(ans, { minDelta: 2, spread: 10, min: 1 });
+    return makeMCQuestion(`¿Cuánto es ${base}²?`, ans, wrongs, steps);
+  }
+}
+
+// --- Álgebra básica ---
+function genAlgebra() {
+  if (Math.random() < 0.5) {
+    const x = randInt(1, 20), a = randInt(1, 20), b = x + a;
+    const steps = [
+      `Para despejar x, haz la operación inversa a "+ ${a}": resta ${a} en ambos lados.`,
+      `x = ${b} − ${a}.`,
+      `x = ${x}.`
+    ];
+    const wrongs = generateWrongs(x, { spread: 5, min: 1 });
+    return makeMCQuestion(`Si x + ${a} = ${b}, ¿cuánto vale x?`, x, wrongs, steps);
+  } else {
+    const x = randInt(2, 12), a = randInt(2, 9), b = x * a;
+    const steps = [
+      `Para despejar x, haz la operación inversa a "× ${a}": divide entre ${a}.`,
+      `x = ${b} ÷ ${a}.`,
+      `x = ${x}.`
+    ];
+    const wrongs = generateWrongs(x, { spread: 4, min: 1 });
+    return makeMCQuestion(`Si ${a}x = ${b}, ¿cuánto vale x?`, x, wrongs, steps);
+  }
+}
+
+// --- Estadística básica ---
+function genEstadistica() {
+  const count = randInt(3, 5);
+  const nums = [];
+  for (let i = 0; i < count; i++) nums.push(randInt(1, 20));
+  const sum = nums.reduce((s, n) => s + n, 0);
+  const ans = (sum / count).toFixed(1);
+  const steps = [
+    `Suma todos los números: ${nums.join(' + ')} = ${sum}.`,
+    `Divide la suma entre la cantidad de números: ${sum} ÷ ${count} = ${ans}.`,
+    `El promedio es ${ans}.`
+  ];
+  const wrongs = generateWrongs(ans, { spread: 4, decimals: 1, min: 0.1 });
+  return makeMCQuestion(`¿Cuál es el promedio (media) de estos números: ${nums.join(', ')}?`, ans, wrongs, steps);
+}
+
+/* ============================================================
+   BANCO DE TEMAS
+   Cada subtema tiene:
+     generate: función que crea una pregunta aleatoria
+     lesson:   { text, visual, video } — la introducción que
+                se muestra antes del quiz
+       - text  es el texto explicativo
+       - visual es el HTML generado por una función visualX()
+       - video es OPCIONAL. Dos formas de usarlo:
+           video: { type: "youtube", id: "ID_DEL_VIDEO" }
+           video: { type: "local", src: "videos/mi-video.mp4" }
+         Si un subtema no tiene video todavía, simplemente no
+         escribas esa línea — no aparecerá nada en su lugar.
+   ============================================================ */
+const TOPICS = [
+  {
+    id: "suma-resta",
+    name: "Suma y resta",
+    icon: "+",
+    color: "#6247AA",
+    subtopics: [
+      {
+        id: "enteros", name: "Números enteros", generate: genSumaEnteros,
+        lesson: {
+          text: "Sumar es juntar cantidades y restar es quitarlas. Con números grandes, puedes avanzar o retroceder por partes en la recta numérica.",
+          visual: visualNumberLine(0, 15, 7, 12)
+        }
+      },
+      {
+        id: "decimales", name: "Decimales", generate: genSumaDecimales,
+        lesson: {
+          text: "Un decimal tiene una parte entera y una parte decimal, separadas por un punto. Para sumar o restar, alinea siempre el punto decimal.",
+          visual: visualDecimal("3.5")
+        }
+      },
+      {
+        id: "positivos-negativos", name: "Positivos y negativos", generate: genPositivosNegativos,
+        lesson: {
+          text: "Los números negativos están a la izquierda del cero. Sumar te mueve a la derecha, y restar te mueve a la izquierda.",
+          visual: visualNumberLine(-10, 10, -3, 4)
+        }
+      }
+    ]
+  },
+  {
+    id: "multiplicacion-division",
+    name: "Multiplicación y división",
+    icon: "×",
+    color: "#2EC4B6",
+    subtopics: [
+      {
+        id: "tablas-basicas", name: "Tablas básicas", generate: genTablas,
+        lesson: {
+          text: "Multiplicar es sumar el mismo número varias veces. Por ejemplo, 5 × 4 significa sumar 5 un total de 4 veces.",
+          visual: visualRepeatedAddition(5, 4)
+        }
+      },
+      {
+        id: "decimales-md", name: "Decimales", generate: genDecimalesMD,
+        lesson: {
+          text: "Multiplicar o dividir con decimales funciona igual que con números enteros — solo debes colocar bien el punto decimal al final.",
+          visual: visualDecimal("2.5")
+        }
+      }
+    ]
+  },
+  {
+    id: "fracciones",
+    name: "Fracciones",
+    icon: "½",
+    color: "#FF8552",
+    subtopics: [
+      {
+        id: "suma-fracciones", name: "Suma de fracciones", generate: genFraccionSuma,
+        lesson: {
+          text: "Cuando dos fracciones tienen el mismo denominador, solo necesitas sumar los numeradores. El denominador no cambia.",
+          visual: visualFractionBar(3, 4)
+        }
+      },
+      {
+        id: "equivalentes", name: "Fracciones equivalentes", generate: genFraccionEquivalente,
+        lesson: {
+          text: "Dos fracciones son equivalentes si representan la misma parte de un entero, aunque se vean distintas.",
+          visual: visualFractionBar(2, 4)
+        }
+      }
+    ]
+  },
+  {
+    id: "geometria",
+    name: "Geometría",
+    icon: "∠",
+    color: "#3E92CC",
+    subtopics: [
+      {
+        id: "angulos", name: "Ángulos", generate: genAngulos,
+        lesson: {
+          text: "Los ángulos complementarios suman 90° y los suplementarios suman 180°. Para hallar el que falta, resta el que ya conoces.",
+          visual: visualAngle(60, 90)
+        }
+      },
+      {
+        id: "perimetro-area", name: "Perímetro y área", generate: genPerimetroArea,
+        lesson: {
+          text: "El área cuenta cuántos cuadritos caben dentro de una figura. En un rectángulo, es largo × ancho.",
+          visual: visualGrid(4, 3)
+        }
+      }
+    ]
+  },
+  {
+    id: "porcentajes",
+    name: "Porcentajes",
+    icon: "%",
+    color: "#D6336C",
+    subtopics: [
+      {
+        id: "porcentaje-de-un-numero", name: "Porcentaje de un número", generate: genPorcentajes,
+        lesson: {
+          text: "Por ciento significa 'de cada 100'. Para hallar el porcentaje de un número, conviértelo en fracción sobre 100 y multiplica.",
+          visual: visualPercentBar(25)
+        }
+      }
+    ]
+  },
+  {
+    id: "potencias-raices",
+    name: "Potencias y raíces",
+    icon: "√",
+    color: "#5C7CFA",
+    subtopics: [
+      {
+        id: "cuadrados-raices", name: "Cuadrados y raíces cuadradas", generate: genPotencias,
+        lesson: {
+          text: "Elevar un número al cuadrado es multiplicarlo por sí mismo — como armar un cuadrado de cuadritos. La raíz cuadrada es la operación inversa.",
+          visual: visualGrid(4, 4)
+        }
+      }
+    ]
+  },
+  {
+    id: "algebra",
+    name: "Álgebra básica",
+    icon: "x",
+    color: "#12B886",
+    subtopics: [
+      {
+        id: "ecuaciones-simples", name: "Ecuaciones de un paso", generate: genAlgebra,
+        lesson: {
+          text: "Una ecuación es como una balanza equilibrada. Para hallar x, deshaz la operación aplicando la inversa en ambos lados.",
+          visual: visualBalance("x + 3", "8")
+        }
+      }
+    ]
+  },
+  {
+    id: "estadistica",
+    name: "Estadística",
+    icon: "x̄",
+    color: "#F59F00",
+    subtopics: [
+      {
+        id: "media", name: "Promedio (media)", generate: genEstadistica,
+        lesson: {
+          text: "El promedio 'nivela' un grupo de números. Súmalos todos y luego divide entre cuántos números hay.",
+          visual: visualBarChart([4, 8, 6, 10])
+        }
+      }
+    ]
+  }
+];
+
+/* ============================================================
+   ESTADO DEL MOTOR
+   ============================================================ */
+let currentTopic = null;
+let currentSubtopic = null;
+let currentQuestions = [];
+let currentIndex = 0;
+let score = 0;
+let answered = false;
+
+/* ============================================================
+   CONFIGURACIÓN INICIAL
+   ============================================================ */
+function buildSpiral() {
+  const spiral = document.getElementById('spiral');
+  spiral.innerHTML = '';
+  for (let i = 0; i < 14; i++) spiral.appendChild(document.createElement('span'));
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ============================================================
+   PANTALLA DEL HUB — lista de temas
+   ============================================================ */
+function showHub() {
+  const container = document.getElementById('topics-container');
+  container.innerHTML = '';
+
+  TOPICS.forEach(topic => {
+    const card = document.createElement('button');
+    card.className = 'topic-card';
+    card.onclick = () => showSubtopics(topic.id);
+    card.innerHTML = `
+      <div class="topic-icon" style="background:${topic.color}">${topic.icon}</div>
+      <div class="topic-info">
+        <p class="topic-name">${topic.name}</p>
+        <p class="topic-meta">${topic.subtopics.length} subtemas</p>
+      </div>
+      <div class="topic-arrow">&rarr;</div>
+    `;
+    container.appendChild(card);
+  });
+
+  showScreen('screen-hub');
+}
+
+/* ============================================================
+   PANTALLA DE SUBTEMAS
+   ============================================================ */
+function showSubtopics(topicId) {
+  currentTopic = TOPICS.find(t => t.id === topicId);
+  document.getElementById('subtopics-title').textContent = currentTopic.name;
+
+  const container = document.getElementById('subtopics-container');
+  container.innerHTML = '';
+
+  currentTopic.subtopics.forEach(sub => {
+    const card = document.createElement('button');
+    card.className = 'topic-card';
+    card.onclick = () => showLesson(sub.id);
+    card.innerHTML = `
+      <div class="topic-icon" style="background:${currentTopic.color}">${currentTopic.icon}</div>
+      <div class="topic-info">
+        <p class="topic-name">${sub.name}</p>
+        <p class="topic-meta">${SITE.questionsPerQuiz} preguntas aleatorias</p>
+      </div>
+      <div class="topic-arrow">&rarr;</div>
+    `;
+    container.appendChild(card);
+  });
+
+  showScreen('screen-subtopics');
+}
+
+/* ============================================================
+   PANTALLA DE LECCIÓN — introducción antes del quiz
+   ============================================================ */
+function showLesson(subtopicId) {
+  currentSubtopic = currentTopic.subtopics.find(s => s.id === subtopicId);
+
+  document.getElementById('lesson-title').textContent = currentSubtopic.name;
+  document.getElementById('lesson-text').textContent = currentSubtopic.lesson.text;
+  document.getElementById('lesson-visual').innerHTML = currentSubtopic.lesson.visual;
+  document.getElementById('lesson-video').innerHTML = renderVideo(currentSubtopic.lesson.video);
+  document.getElementById('lesson-back-btn').onclick = () => showSubtopics(currentTopic.id);
+  document.getElementById('lesson-start-btn').onclick = () => startQuiz(currentSubtopic.id);
+
+  showScreen('screen-lesson');
+}
+
+/* ============================================================
+   INICIAR UN QUIZ
+   ============================================================ */
+function startQuiz(subtopicId) {
+  currentSubtopic = currentTopic.subtopics.find(s => s.id === subtopicId);
+  currentQuestions = [];
+  for (let i = 0; i < SITE.questionsPerQuiz; i++) {
+    currentQuestions.push(currentSubtopic.generate());
+  }
+  currentIndex = 0;
+  score = 0;
+
+  buildProgressBar();
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function retrySubtopic() {
+  startQuiz(currentSubtopic.id);
+}
+
+function buildProgressBar() {
+  const bar = document.getElementById('progress-bar');
+  bar.innerHTML = '';
+  currentQuestions.forEach(() => {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    bar.appendChild(dot);
+  });
+}
+
+function updateProgressBar() {
+  const dots = document.querySelectorAll('#progress-bar .dot');
+  dots.forEach((dot, i) => dot.classList.toggle('done', i < currentIndex));
+}
+
+/* ============================================================
+   MOSTRAR UNA PREGUNTA
+   ============================================================ */
+function renderQuestion() {
+  answered = false;
+  disarmFinishButton();
+  const q = currentQuestions[currentIndex];
+
+  document.getElementById('topic-label').textContent = `${currentTopic.name} · ${currentSubtopic.name}`;
+  document.getElementById('question-text').textContent = q.question;
+  document.getElementById('score-display').textContent = `Puntaje: ${score} / ${currentQuestions.length}`;
+  updateProgressBar();
+
+  const container = document.getElementById('answers-container');
+  container.innerHTML = '';
+
+  q.options.forEach((optionText, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = optionText;
+    btn.onclick = () => selectAnswer(i);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('reveal-btn').style.display = 'block';
+
+  const feedbackBox = document.getElementById('feedback-box');
+  feedbackBox.classList.remove('show', 'correct-fb', 'wrong-fb', 'reveal-fb');
+  document.getElementById('next-btn').style.display = 'none';
+}
+
+/* Muestra los pasos de la pregunta actual dentro del cuadro
+   de retroalimentación, sin importar el resultado. */
+function renderSteps(q) {
+  const stepsList = document.getElementById('feedback-steps');
+  stepsList.innerHTML = '';
+  q.steps.forEach(step => {
+    const li = document.createElement('li');
+    li.textContent = step;
+    stepsList.appendChild(li);
+  });
+}
+
+/* ============================================================
+   MANEJAR UNA RESPUESTA
+   ============================================================ */
+function selectAnswer(selectedIndex) {
+  if (answered) return;
+  answered = true;
+  document.getElementById('reveal-btn').style.display = 'none';
+
+  const q = currentQuestions[currentIndex];
+  const isCorrect = selectedIndex === q.correctIndex;
+  const allBtns = document.querySelectorAll('#answers-container .btn');
+
+  allBtns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correctIndex) btn.classList.add('correct');
+    if (i === selectedIndex && !isCorrect) btn.classList.add('wrong');
+  });
+
+  if (isCorrect) score++;
+
+  const feedbackBox = document.getElementById('feedback-box');
+  const stamp = document.getElementById('feedback-stamp');
+  const title = document.getElementById('feedback-title');
+
+  feedbackBox.classList.remove('correct-fb', 'wrong-fb', 'reveal-fb');
+  feedbackBox.classList.add(isCorrect ? 'correct-fb' : 'wrong-fb');
+  stamp.textContent = isCorrect ? '✓' : '✗';
+  title.textContent = isCorrect ? '¡Correcto! Así se resuelve:' : 'No es así. Repasemos el proceso:';
+  renderSteps(q);
+
+  requestAnimationFrame(() => feedbackBox.classList.add('show'));
+
+  document.getElementById('score-display').textContent = `Puntaje: ${score} / ${currentQuestions.length}`;
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = currentIndex === currentQuestions.length - 1 ? 'Ver resultados' : 'Siguiente pregunta';
+  nextBtn.style.display = 'block';
+}
+
+/* ============================================================
+   MOSTRAR RESPUESTA — revela la solución sin sumar puntos
+   ============================================================ */
+function revealAnswer() {
+  if (answered) return;
+  answered = true;
+  document.getElementById('reveal-btn').style.display = 'none';
+
+  const q = currentQuestions[currentIndex];
+  const allBtns = document.querySelectorAll('#answers-container .btn');
+  allBtns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correctIndex) btn.classList.add('correct');
+  });
+
+  const feedbackBox = document.getElementById('feedback-box');
+  const stamp = document.getElementById('feedback-stamp');
+  const title = document.getElementById('feedback-title');
+
+  feedbackBox.classList.remove('correct-fb', 'wrong-fb', 'reveal-fb');
+  feedbackBox.classList.add('reveal-fb');
+  stamp.textContent = '?';
+  title.textContent = 'Así se resuelve (no sumó puntos):';
+  renderSteps(q);
+
+  requestAnimationFrame(() => feedbackBox.classList.add('show'));
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = currentIndex === currentQuestions.length - 1 ? 'Ver resultados' : 'Siguiente pregunta';
+  nextBtn.style.display = 'block';
+}
+
+/* ============================================================
+   TERMINAR EL QUIZ ANTES DE TIEMPO
+   Muestra los resultados usando solo las preguntas que ya se
+   respondieron (o se revelaron), no las 10 preguntas completas.
+   Usa un "doble toque" en vez de confirm(), porque confirm()
+   no funciona en varios navegadores integrados (WebViews). */
+let finishArmed = false;
+let finishArmedTimeout = null;
+
+function confirmFinishQuiz() {
+  const btn = document.getElementById('finish-quiz-btn');
+
+  if (!finishArmed) {
+    finishArmed = true;
+    btn.textContent = '¿Seguro? Toca de nuevo para terminar';
+    btn.classList.add('finish-btn-armed');
+    clearTimeout(finishArmedTimeout);
+    finishArmedTimeout = setTimeout(() => disarmFinishButton(), 3000);
+    return;
+  }
+
+  disarmFinishButton();
+
+  const answeredSoFar = currentIndex + (answered ? 1 : 0);
+  if (answeredSoFar === 0) {
+    showHub();
+    return;
+  }
+  finishQuiz();
+}
+
+function disarmFinishButton() {
+  finishArmed = false;
+  clearTimeout(finishArmedTimeout);
+  const btn = document.getElementById('finish-quiz-btn');
+  if (btn) {
+    btn.textContent = 'Terminar quiz';
+    btn.classList.remove('finish-btn-armed');
+  }
+}
+
+function finishQuiz() {
+  currentQuestions = currentQuestions.slice(0, currentIndex + (answered ? 1 : 0));
+  showResults();
+}
+
+/* ============================================================
+   AVANZAR A LA SIGUIENTE PREGUNTA O A RESULTADOS
+   ============================================================ */
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < currentQuestions.length) {
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  updateProgressBar();
+  document.getElementById('result-score').textContent = `${score} / ${currentQuestions.length}`;
+
+  const pct = score / currentQuestions.length;
+  let note = "Sigue practicando — ¡ya casi lo logras!";
+  if (pct === 1) note = "¡Puntaje perfecto! Respondiste todo correctamente.";
+  else if (pct >= 0.7) note = "¡Muy bien! Ya le vas agarrando el truco.";
+  else if (pct >= 0.4) note = "Buen esfuerzo — con un poco más de práctica lo dominarás.";
+
+  document.getElementById('result-note').textContent = note;
+  showScreen('screen-results');
+}
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+applySiteConfig();
+buildSpiral();
+</script>
+
+</body>
+</html>
